@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
 
-public class ball : NetworkBehaviour
+public class Ball : NetworkBehaviour
 {
 
     [Networked] private TickTimer life { get; set; }
