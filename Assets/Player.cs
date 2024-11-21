@@ -33,20 +33,25 @@ public class Player : NetworkBehaviour
 
             if (HasInputAuthority && delay.ExpiredOrNotRunning(Runner))
             {
-
-
+               
+           
                 if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0))
                 {
                     delay = TickTimer.CreateFromSeconds(Runner, 0.5f);
                     Runner.Spawn(
                         _prefabBall, transform.position + _forward,
                         Quaternion.LookRotation(_forward),
-                        Object.InputAuthority, (runner, o) =>
+                        Object.InputAuthority, (runner,o) =>
                         {
-                            o.GetComponent<ball>().Init();
-                        });
+                            o.GetComponent <ball>().Init();
+                    });
                 }
             }
         }
     }
 }
+
+    
+    
+    
+
