@@ -22,6 +22,6 @@ public class Ball : NetworkBehaviour
     }
     public void Init()
     {
-        life = TickTimer.CreateFromSeconds(Runner, 5.0f);
+        life = TickTimer.CreateFromSeconds(Runner, 1.7f);
     }
 }

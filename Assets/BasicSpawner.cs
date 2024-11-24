@@ -9,6 +9,10 @@ using UnityEngine.SceneManagement;
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
     private NetworkRunner _runner;
+    [SerializeField] private GameObject menuPanel;
+    [SerializeField] private GameZoneController gameZoneController; // Ссылка на контроллер зоны
+
+
 
     async void StartGame(GameMode mode)
     {
@@ -32,23 +36,30 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             Scene = scene,
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
-
-
-
+    }
+ 
+    public void StartHost()
+    {
+      if (_runner == null)
+      {
+         StartGame(GameMode.Host);
+         CloseMenu();
+      }
     }
 
-    private void OnGUI()
+    public void StartClient()
     {
-        if (_runner == null)
+      if (_runner == null)
+      {
+          StartGame(GameMode.Client);
+          CloseMenu();
+       }
+    }
+    private void CloseMenu()
+    {
+        if (menuPanel != null)
         {
-            if (GUI.Button(new Rect(0, 0, 200, 40), "Host"))
-            {
-                StartGame(GameMode.Host);
-            }
-            if (GUI.Button(new Rect(0, 40, 200, 40), "Join"))
-            {
-                StartGame(GameMode.Client);
-            }
+            menuPanel.SetActive(false); // Отключаем панель с меню
         }
     }
 
@@ -60,7 +71,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             // Create a unique position for the player 
-            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 3, 1, 0);
+            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 0, 1, 0);
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
             // Keep track of the player avatars for easy access 
             _spawnedCharacters.Add(player, networkPlayerObject);
