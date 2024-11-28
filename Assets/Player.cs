@@ -3,72 +3,79 @@ using UnityEngine;
 
 public class Player : NetworkBehaviour
 {
-    [SerializeField] private Ball _prefabBall;
-
     [Networked] public int CurrentLives { get; private set; } = 3; // Количество жизней
-
-    [Networked] private TickTimer delay { get; set; }
+    [Networked] private TickTimer respawnProtectionTimer { get; set; } // Таймер защиты после перемещения
 
     private NetworkCharacterController _cc;
-    private Vector3 _forward;
 
     private void Awake()
     {
         _cc = GetComponent<NetworkCharacterController>();
-        _forward = transform.forward;
     }
 
     public override void FixedUpdateNetwork()
     {
         if (GetInput(out NetworkInputData data))
         {
+            // Движение игрока
             data.direction.Normalize();
             _cc.Move(5 * data.direction * Runner.DeltaTime);
+        }
+    }
 
-            if (data.direction.sqrMagnitude > 0)
-                _forward = data.direction;
+    // Уменьшение жизней и перемещение в начальную точку
+    public void HandleDeathZone()
+    {
+        if (HasStateAuthority)
+        {
+            // Уменьшаем жизни
+            CurrentLives--;
+            Debug.Log($"Жизни игрока уменьшены до: {CurrentLives}");
 
-            if (HasStateAuthority && delay.ExpiredOrNotRunning(Runner))
+            if (CurrentLives <= 0)
             {
-                if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0))
-                {
-                    delay = TickTimer.CreateFromSeconds(Runner, 1.5f);
-                    Runner.Spawn(_prefabBall,
-                    transform.position + _forward, Quaternion.LookRotation(_forward),
-                    Object.InputAuthority, (runner, o) =>
-                    {
-                        // Initialize the Ball before synchronizing it
-                        o.GetComponent<Ball>().Init();
-                    });
-                }
+                RemoveFromGame(); // Удаляем игрока из игры
+            }
+            else
+            {
+                MoveToStartPoint(); // Перемещаем игрока в начальную точку
             }
         }
     }
 
-    // Уменьшение количества жизней
-    public void DecreaseLife()
+    // Перемещение в начальную точку
+    private void MoveToStartPoint()
     {
-        if (HasStateAuthority)
-        {
-            CurrentLives--;
-        }
-    }
+        Debug.Log("Игрок перемещается в начальную точку...");
 
-    // Респаун игрока
-    public void Respawn()
-    {
-        if (HasStateAuthority)
+        // Если есть Rigidbody, корректно обрабатываем перемещение
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null)
         {
-            transform.position = new Vector3(0, 3, 0); // Фиксированная точка респауна
+            rb.isKinematic = true; // Отключаем физику временно
+            rb.position = new Vector3(0, 3, 0); // Устанавливаем позицию
+            rb.velocity = Vector3.zero; // Сбрасываем скорость
+            rb.isKinematic = false; // Включаем физику обратно
         }
+        else
+        {
+            transform.position = new Vector3(0, 3, 0); // Просто перемещаем объект
+        }
+
+        // Устанавливаем защиту на 1 секунду, чтобы избежать повторного попадания в зону смерти
+        respawnProtectionTimer = TickTimer.CreateFromSeconds(Runner, 1.0f);
     }
 
     // Удаление игрока из игры
-    public void RemoveFromGame()
+    private void RemoveFromGame()
     {
-        if (HasStateAuthority)
-        {
-            Runner.Despawn(Object); // Удаляем игрока из игры
-        }
+        Debug.Log("Игрок удалён из игры.");
+        Runner.Despawn(Object); // Удаляем игрока из игры
+    }
+
+    // Проверка на защиту
+    public bool IsProtected()
+    {
+        return respawnProtectionTimer.IsRunning;
     }
 }
