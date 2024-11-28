@@ -1,9 +1,11 @@
-using Fusion;
+﻿using Fusion;
 using UnityEngine;
 
 public class Player : NetworkBehaviour
 {
     [SerializeField] private Ball _prefabBall;
+
+    [Networked] public int CurrentLives { get; private set; } = 3; // Количество жизней
 
     [Networked] private TickTimer delay { get; set; }
 
@@ -40,6 +42,33 @@ public class Player : NetworkBehaviour
                     });
                 }
             }
+        }
+    }
+
+    // Уменьшение количества жизней
+    public void DecreaseLife()
+    {
+        if (HasStateAuthority)
+        {
+            CurrentLives--;
+        }
+    }
+
+    // Респаун игрока
+    public void Respawn()
+    {
+        if (HasStateAuthority)
+        {
+            transform.position = new Vector3(0, 3, 0); // Фиксированная точка респауна
+        }
+    }
+
+    // Удаление игрока из игры
+    public void RemoveFromGame()
+    {
+        if (HasStateAuthority)
+        {
+            Runner.Despawn(Object); // Удаляем игрока из игры
         }
     }
 }
