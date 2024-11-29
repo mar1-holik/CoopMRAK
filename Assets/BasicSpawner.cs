@@ -10,25 +10,17 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
     private NetworkRunner _runner;
     [SerializeField] private GameObject menuPanel;
-    [SerializeField] private GameZoneController gameZoneController; // Ссылка на контроллер зоны
+    [SerializeField] private NetworkPrefabRef[] playerPrefabs; // Массив префабов игроков
+    [SerializeField] private Transform[] spawnPoints; // Массив точек для спавна
 
-
+    private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
     async void StartGame(GameMode mode)
     {
-        // Create the Fusion runner and let it know that we will be providing user input 
         _runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;
 
-        // Create the NetworkSceneInfo from the current scene 
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
-        var sceneInfo = new NetworkSceneInfo();
-        if (scene.IsValid)
-        {
-            sceneInfo.AddSceneRef(scene, LoadSceneMode.Additive);
-        }
-
-        // Start or join (depends on gamemode) a session with a specific name 
         await _runner.StartGame(new StartGameArgs()
         {
             GameMode = mode,
@@ -37,43 +29,51 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
     }
- 
+
     public void StartHost()
     {
-      if (_runner == null)
-      {
-         StartGame(GameMode.Host);
-         CloseMenu();
-      }
+        if (_runner == null)
+        {
+            StartGame(GameMode.Host);
+            CloseMenu();
+        }
     }
 
     public void StartClient()
     {
-      if (_runner == null)
-      {
-          StartGame(GameMode.Client);
-          CloseMenu();
-       }
+        if (_runner == null)
+        {
+            StartGame(GameMode.Client);
+            CloseMenu();
+        }
     }
+
     private void CloseMenu()
     {
         if (menuPanel != null)
         {
-            menuPanel.SetActive(false); // Отключаем панель с меню
+            menuPanel.SetActive(false);
         }
     }
-
-    [SerializeField] private NetworkPrefabRef _playerPrefab;
-    private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         if (runner.IsServer)
         {
-            // Create a unique position for the player 
-            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 0, 1, 0);
-            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-            // Keep track of the player avatars for easy access 
+            int spawnIndex = _spawnedCharacters.Count % spawnPoints.Length; // Получаем индекс спавна
+            int prefabIndex = _spawnedCharacters.Count % playerPrefabs.Length; // Получаем индекс префаба
+
+            Transform spawnPoint = spawnPoints[spawnIndex];
+            Vector3 spawnPosition = spawnPoint.position;
+            Quaternion spawnRotation = spawnPoint.rotation;
+
+            // Выбираем префаб для игрока
+            NetworkPrefabRef selectedPrefab = playerPrefabs[prefabIndex];
+
+            // Спавним игрока
+            NetworkObject networkPlayerObject = runner.Spawn(selectedPrefab, spawnPosition, spawnRotation, player);
+
+            // Сохраняем ссылку на объект игрока
             _spawnedCharacters.Add(player, networkPlayerObject);
         }
     }
@@ -86,11 +86,9 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             _spawnedCharacters.Remove(player);
         }
     }
+
     private bool _mouseButton0;
-    private void Update()
-    {
-        _mouseButton0 = _mouseButton0 | Input.GetMouseButton(0);
-    }
+
     public void OnInput(NetworkRunner runner, NetworkInput input)
     {
         var data = new NetworkInputData();
@@ -112,6 +110,13 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
         input.Set(data);
     }
+
+    private void FixedUpdate()
+    {
+        _mouseButton0 = _mouseButton0 || Input.GetMouseButton(0);
+    }
+
+    // Пустые реализации интерфейса
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
     public void OnConnectedToServer(NetworkRunner runner) { }
@@ -122,10 +127,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
     public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) { }
     public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
-    public void OnSceneLoadDone(NetworkRunner runner) { } 
-    public void OnSceneLoadStart(NetworkRunner runner) { } 
-    public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { } 
-    public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { } 
-    public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { } 
-    public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { } 
+    public void OnSceneLoadDone(NetworkRunner runner) { }
+    public void OnSceneLoadStart(NetworkRunner runner) { }
+    public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+    public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+    public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
+    public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { }
 }

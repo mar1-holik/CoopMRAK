@@ -1,9 +1,11 @@
-using Fusion;
+﻿using Fusion;
 using UnityEngine;
 
 public class Player : NetworkBehaviour
 {
     [SerializeField] private Ball _prefabBall;
+
+    [Networked] public int CurrentLives { get; private set; } = 3; // Количество жизней
 
     [Networked] private TickTimer delay { get; set; }
 
@@ -30,7 +32,7 @@ public class Player : NetworkBehaviour
             {
                 if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0))
                 {
-                    delay = TickTimer.CreateFromSeconds(Runner, 0.3f);
+                    delay = TickTimer.CreateFromSeconds(Runner, 1.5f);
                     Runner.Spawn(_prefabBall,
                     transform.position + _forward, Quaternion.LookRotation(_forward),
                     Object.InputAuthority, (runner, o) =>
@@ -40,6 +42,33 @@ public class Player : NetworkBehaviour
                     });
                 }
             }
+        }
+    }
+
+    // Уменьшение количества жизней
+    public void DecreaseLife()
+    {
+        if (HasStateAuthority)
+        {
+            CurrentLives--;
+        }
+    }
+
+    // Респаун игрока
+    public void Respawn()
+    {
+        if (HasStateAuthority)
+        {
+            transform.position = new Vector3(0, 3, 0); // Фиксированная точка респауна
+        }
+    }
+
+    // Удаление игрока из игры
+    public void RemoveFromGame()
+    {
+        if (HasStateAuthority)
+        {
+            Runner.Despawn(Object); // Удаляем игрока из игры
         }
     }
 }
