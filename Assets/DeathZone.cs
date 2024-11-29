@@ -1,31 +1,22 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using Fusion;
 using UnityEngine;
-using Fusion;
 
 public class DeathZone : MonoBehaviour
 {
-    private const int MaxLives = 3; // Максимальное количество жизней
-
     private void OnTriggerEnter(Collider other)
     {
         // Проверяем, является ли объект игроком
         if (other.TryGetComponent(out Player player))
         {
-            // Уменьшаем количество жизней игрока
-            player.DecreaseLife();
-
-            if (player.CurrentLives <= 0)
+            // Проверяем, что игрок не защищён
+            if (!player.IsProtected())
             {
-                // Удаляем игрока из игры
-                Debug.Log($"{player.name} навсегда устранён!");
-                player.RemoveFromGame();
+                Debug.Log($"Игрок {player.name} попал в зону смерти.");
+                player.HandleDeathZone(); // Уменьшаем жизни и перемещаем игрока в начальную точку
             }
             else
             {
-                // Респавним игрока
-                Debug.Log($"{player.name} умер. Оставшиеся жизни: {player.CurrentLives}");
-                player.Respawn();
+                Debug.Log($"Игрок {player.name} временно защищён. Смерть не засчитана.");
             }
         }
     }
