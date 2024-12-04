@@ -5,19 +5,18 @@ public class DeathZone : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        // Проверяем, является ли объект игроком
         if (other.TryGetComponent(out Player player))
         {
-            // Проверяем, что игрок не защищён
-            if (!player.IsProtected())
+            if (!player.IsProtected()) // Проверяем, есть ли защита
             {
                 Debug.Log($"Игрок {player.name} попал в зону смерти.");
-                player.HandleDeathZone(); // Уменьшаем жизни и перемещаем игрока в начальную точку
+                player.HandleDeathZone(); // Уменьшаем жизни и респавним игрока
             }
             else
             {
-                Debug.Log($"Игрок {player.name} временно защищён. Смерть не засчитана.");
+                Debug.Log($"Игрок {player.name} защищён. Смерть не засчитана.");
             }
         }
     }
+
 }

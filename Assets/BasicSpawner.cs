@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
@@ -57,35 +56,62 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     }
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
+{
+    if (runner.IsServer)
     {
-        if (runner.IsServer)
+        int spawnIndex = _spawnedCharacters.Count % spawnPoints.Length; // Индекс спавн-точки
+
+        Transform spawnPoint = spawnPoints[spawnIndex];
+
+        // Сохраняем точку спавна для игрока
+        if (!_playerSpawnPoints.ContainsKey(player))
         {
-            int spawnIndex = _spawnedCharacters.Count % spawnPoints.Length; // Получаем индекс спавна
-            int prefabIndex = _spawnedCharacters.Count % playerPrefabs.Length; // Получаем индекс префаба
-
-            Transform spawnPoint = spawnPoints[spawnIndex];
-            Vector3 spawnPosition = spawnPoint.position;
-            Quaternion spawnRotation = spawnPoint.rotation;
-
-            // Выбираем префаб для игрока
-            NetworkPrefabRef selectedPrefab = playerPrefabs[prefabIndex];
-
-            // Спавним игрока
-            NetworkObject networkPlayerObject = runner.Spawn(selectedPrefab, spawnPosition, spawnRotation, player);
-
-            // Сохраняем ссылку на объект игрока
-            _spawnedCharacters.Add(player, networkPlayerObject);
+            _playerSpawnPoints[player] = spawnPoint;
         }
+
+        // Выбираем префаб для игрока
+        int prefabIndex = _spawnedCharacters.Count % playerPrefabs.Length;
+        NetworkPrefabRef selectedPrefab = playerPrefabs[prefabIndex];
+
+        // Спавним игрока
+        NetworkObject networkPlayerObject = runner.Spawn(selectedPrefab, spawnPoint.position, spawnPoint.rotation, player);
+
+        // Сохраняем объект игрока
+        _spawnedCharacters.Add(player, networkPlayerObject);
     }
+}
+
+    public Transform GetSpawnPointForPlayer(PlayerRef player)
+{
+    if (_playerSpawnPoints.TryGetValue(player, out Transform spawnPoint))
+    {
+        return spawnPoint;
+    }
+
+    Debug.LogError($"Точка спавна для игрока {player} не найдена! Используется стандартная позиция.");
+    return null; // Возвращаем null, если игрока нет в словаре
+}
+
+
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
+{
+    if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
     {
-        if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
-        {
-            runner.Despawn(networkObject);
-            _spawnedCharacters.Remove(player);
-        }
+        runner.Despawn(networkObject);
+        _spawnedCharacters.Remove(player);
     }
+
+    // Удаляем точку спавна игрока
+    if (_playerSpawnPoints.ContainsKey(player))
+    {
+        _playerSpawnPoints.Remove(player);
+    }
+}
+
+
+    // Словарь для хранения связи игрока и его точки спавна
+    private Dictionary<PlayerRef, Transform> _playerSpawnPoints = new Dictionary<PlayerRef, Transform>();
 
     private bool _mouseButton0;
 
