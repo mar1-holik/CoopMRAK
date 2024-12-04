@@ -5,22 +5,28 @@ using System.Collections;
 public class Player : NetworkBehaviour
 {
     [SerializeField] private Ball _prefabBall;
-
     [Networked] private TickTimer delay { get; set; }
     [Networked] public int CurrentLives { get; private set; } = 3; // Количество жизней
     [Networked] private TickTimer respawnProtectionTimer { get; set; } // Таймер защиты после возрождения
 
     private NetworkCharacterController _cc;
     private Vector3 _forward;
-
     private CharacterController _characterController;
+    private Animator _animator; // Ссылка на аниматор
 
     private void Awake()
     {
         _cc = GetComponent<NetworkCharacterController>();
         _forward = transform.forward;
-
         _characterController = GetComponent<CharacterController>();
+
+        // Получаем Animator с дочернего объекта
+        _animator = GetComponentInChildren<Animator>();
+
+        if (_animator == null)
+        {
+            Debug.LogError("Animator не найден на объекте или его дочернем объекте!");
+        }
     }
 
     public override void FixedUpdateNetwork()
@@ -31,26 +37,59 @@ public class Player : NetworkBehaviour
             data.direction.Normalize();
             _cc.Move(5 * data.direction * Runner.DeltaTime);
 
+            // Проверка, если игрок двигается
             if (data.direction.sqrMagnitude > 0)
+            {
                 _forward = data.direction;
+
+                // Переключаем анимацию в зависимости от движения
+                if (_animator != null)
+                {
+                    _animator.SetBool("isRunning", true);
+                }
+            }
+            else
+            {
+                // Переключаем на анимацию стояния
+                if (_animator != null)
+                {
+                    _animator.SetBool("isRunning", false);                  
+                }
+            }
 
             // Стрельба
             if (HasStateAuthority && delay.ExpiredOrNotRunning(Runner))
             {
                 if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0))
                 {
-                    delay = TickTimer.CreateFromSeconds(Runner, 0.5f);
+                    // Включаем анимацию выстрела
+                    if (_animator != null)
+                    {
+                        _animator.SetBool("isShooting", true); // Включаем анимацию выстрела
+                    }
+
+                    delay = TickTimer.CreateFromSeconds(Runner, 0.5f); // Устанавливаем задержку между выстрелами
+
+                    // Спавним шарик
                     Runner.Spawn(_prefabBall,
                     transform.position + _forward, Quaternion.LookRotation(_forward),
                     Object.InputAuthority, (runner, o) =>
                     {
-                        // Инициализируем шар до его синхронизации
                         o.GetComponent<Ball>().Init();
                     });
+                }
+                else
+                {
+                    // Если кнопка выстрела не нажата, сбрасываем анимацию выстрела
+                    if (_animator != null && _animator.GetBool("isShooting"))
+                    {
+                        _animator.SetBool("isShooting", false); // Сбрасываем анимацию выстрела
+                    }
                 }
             }
         }
     }
+
 
     // Метод для обработки попадания в зону смерти
     public void HandleDeathZone()
@@ -101,8 +140,6 @@ public class Player : NetworkBehaviour
         respawnProtectionTimer = TickTimer.CreateFromSeconds(Runner, 1.0f);
         Debug.Log("Respawn protection activated");
     }
-
-
 
     // Удаление игрока из игры
     private void RemoveFromGame()
