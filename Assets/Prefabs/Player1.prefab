@@ -195,3 +195,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _prefabBall: {fileID: 2015846284172938178, guid: ea5b8e53d15dae2439eb3de113c57e81, type: 3}
+  _CurrentLives: 3
