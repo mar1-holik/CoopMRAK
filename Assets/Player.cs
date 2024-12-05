@@ -10,6 +10,8 @@ public class Player : NetworkBehaviour
     [SerializeField] private float shootCooldown = 1.3f; // Минимальное время между выстрелами в секундах
     [SerializeField] private float bulletSpeed = 10f; // Скорость снаряда
 
+    private HealthUI healthUI; // Ссылка на HealthUI для отображения здоровья
+
     [Networked] private TickTimer delay { get; set; } // Таймер задержки между выстрелами
     [Networked] public int CurrentLives { get; private set; } = 3; // Количество жизней
     [Networked] private TickTimer respawnProtectionTimer { get; set; } // Таймер защиты после возрождения
@@ -21,6 +23,13 @@ public class Player : NetworkBehaviour
     {
         _cc = GetComponent<NetworkCharacterController>();
         _forward = transform.forward;
+
+        // Находим HealthUI на сцене
+        healthUI = FindObjectOfType<HealthUI>();
+        if (healthUI == null)
+        {
+            Debug.LogError("HealthUI не найден. Убедитесь, что объект с этим компонентом присутствует на сцене.");
+        }
 
         // Инициализируем аниматор
         if (_animator == null)
@@ -38,42 +47,33 @@ public class Player : NetworkBehaviour
     {
         if (GetInput(out NetworkInputData data))
         {
-            // Нормализуем направление для корректного передвижения
             data.direction.Normalize();
 
-            // Перемещение игрока
             _cc.Move(5 * data.direction * Runner.DeltaTime);
 
-            // Если игрок двигается, обновляем направление стрельбы
             if (data.direction.sqrMagnitude > 0)
             {
-                _forward = data.direction; // Сохраняем текущее направление
+                _forward = data.direction;
             }
 
-            // Если игрок стреляет, учитываем задержку между выстрелами
             if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0) && delay.ExpiredOrNotRunning(Runner))
             {
                 if (_animator != null)
                 {
-                    // Включаем анимацию стрельбы
                     _animator.SetBool("isShooting", true);
                 }
 
-                // Устанавливаем задержку между выстрелами
                 delay = TickTimer.CreateFromSeconds(Runner, shootCooldown);
 
-                // Запускаем Coroutine для спавна шара
                 StartCoroutine(SpawnBallWithDelay());
             }
             else
             {
-                // Останавливаем анимацию стрельбы, если кнопка не нажата
                 if (_animator != null && _animator.GetBool("isShooting"))
                 {
                     _animator.SetBool("isShooting", false);
                 }
 
-                // Если не стреляем, проверяем анимацию бега
                 if (_animator != null)
                 {
                     _animator.SetBool("isRunning", data.direction.sqrMagnitude > 0);
@@ -84,46 +84,56 @@ public class Player : NetworkBehaviour
 
     private IEnumerator SpawnBallWithDelay()
     {
-        // Ждём задержку перед выстрелом
         yield return new WaitForSeconds(shootDelay);
 
-        // Спавн снаряда
         Runner.Spawn(_prefabBall,
-            transform.position + _forward, // Начальная позиция снаряда
-            Quaternion.LookRotation(_forward), // Направление стрельбы
+            transform.position + _forward,
+            Quaternion.LookRotation(_forward),
             Object.InputAuthority, (runner, o) =>
             {
-                // Устанавливаем скорость снаряда
                 o.GetComponent<Ball>().SetSpeed(bulletSpeed);
             });
 
-        // Завершаем анимацию стрельбы
         if (_animator != null)
         {
             _animator.SetBool("isShooting", false);
         }
     }
 
-    // Метод для обработки попадания в зону смерти
     public void HandleDeathZone()
     {
-        if (HasStateAuthority) // Проверяем, является ли этот объект владельцем состояния
+        if (HasStateAuthority)
         {
             if (CurrentLives > 0)
             {
-                CurrentLives--; // Уменьшаем жизни
+                CurrentLives--;
                 Debug.Log($"Игрок {Object.InputAuthority} потерял жизнь. Осталось жизней: {CurrentLives}");
-                Respawn(); // Вызываем респавн
+
+                // Если healthUI ещё не найден, ищем его
+                if (healthUI == null)
+                {
+                    healthUI = FindObjectOfType<HealthUI>();
+                }
+
+                if (healthUI != null)
+                {
+                    healthUI.DecreaseHealth();
+                }
+                else
+                {
+                    Debug.LogError("HealthUI не найден. Убедитесь, что он присутствует на сцене.");
+                }
+
+                Respawn();
             }
             else
             {
                 Debug.Log($"Игрок {Object.InputAuthority} потерял все жизни.");
-                Runner.Despawn(Object); // Удаляем объект игрока из игры
+                Runner.Despawn(Object);
             }
         }
     }
 
-    // Проверка, находится ли игрок под защитой после респавна
     public bool IsProtected()
     {
         return respawnProtectionTimer.ExpiredOrNotRunning(Runner) == false;
@@ -138,21 +148,28 @@ public class Player : NetworkBehaviour
     {
         _cc.enabled = false;
 
-        // Получаем точку спавна
-        Transform spawnPoint = FindObjectOfType<BasicSpawner>().GetSpawnPointForPlayer(Object.InputAuthority);
-
-        if (spawnPoint != null)
+        BasicSpawner spawner = FindObjectOfType<BasicSpawner>();
+        if (spawner != null)
         {
-            Vector3 respawnPosition = spawnPoint.position;
-            Quaternion respawnRotation = spawnPoint.rotation;
+            Transform spawnPoint = spawner.GetSpawnPointForPlayer(Object.InputAuthority);
 
-            Debug.Log($"Респавн игрока на позиции: {respawnPosition}");
-            _cc.Teleport(respawnPosition, respawnRotation);
+            if (spawnPoint != null)
+            {
+                Vector3 respawnPosition = spawnPoint.position;
+                Quaternion respawnRotation = spawnPoint.rotation;
+
+                Debug.Log($"Респавн игрока на позиции: {respawnPosition}");
+                _cc.Teleport(respawnPosition, respawnRotation);
+            }
+            else
+            {
+                Debug.LogError("Точка спавна не найдена! Используется стандартная позиция.");
+                _cc.Teleport(new Vector3(0, 10, 0), Quaternion.identity);
+            }
         }
         else
         {
-            Debug.LogError("Точка спавна не найдена! Используется стандартная позиция.");
-            _cc.Teleport(new Vector3(0, 10, 0), Quaternion.identity);
+            Debug.LogError("BasicSpawner не найден на сцене.");
         }
 
         _cc.Velocity = Vector3.zero;
@@ -160,9 +177,7 @@ public class Player : NetworkBehaviour
 
         _cc.enabled = true;
 
-        // Активируем временную защиту
         respawnProtectionTimer = TickTimer.CreateFromSeconds(Runner, 1.0f);
         Debug.Log("Активирована защита после респавна");
     }
-
 }

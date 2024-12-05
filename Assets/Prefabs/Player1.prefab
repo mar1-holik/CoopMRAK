@@ -116,7 +116,7 @@ MonoBehaviour:
   shootDelay: 0.3
   shootCooldown: 1
   bulletSpeed: 10
-  _CurrentLives: 3
+  _CurrentLives: 2
 --- !u!1001 &5269617716595052683
 PrefabInstance:
   m_ObjectHideFlags: 0
