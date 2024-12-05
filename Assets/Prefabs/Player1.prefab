@@ -95,10 +95,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gravity: -20
   jumpImpulse: 0
-  acceleration: 5
-  braking: 5
-  maxSpeed: 3
-  rotationSpeed: 20
+  acceleration: 10
+  braking: 10
+  maxSpeed: 2
+  rotationSpeed: 15
 --- !u!114 &-1162907985718194934
 MonoBehaviour:
   m_ObjectHideFlags: 0
