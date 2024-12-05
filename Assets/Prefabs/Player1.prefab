@@ -95,10 +95,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gravity: -20
   jumpImpulse: 0
-  acceleration: 10
-  braking: 10
-  maxSpeed: 2
-  rotationSpeed: 15
+  acceleration: 5
+  braking: 5
+  maxSpeed: 3
+  rotationSpeed: 20
 --- !u!114 &-1162907985718194934
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -112,6 +112,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _prefabBall: {fileID: 2015846284172938178, guid: ea5b8e53d15dae2439eb3de113c57e81, type: 3}
+  _animator: {fileID: 905771713077286205}
+  shootDelay: 0.3
+  shootCooldown: 1
+  bulletSpeed: 10
   _CurrentLives: 3
 --- !u!1001 &5269617716595052683
 PrefabInstance:

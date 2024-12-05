@@ -22,4 +22,19 @@ public class Ball : NetworkBehaviour
     {
         life = TickTimer.CreateFromSeconds(Runner, 1.7f);
     }
+
+    private float _speed;
+
+    public void SetSpeed(float speed)
+    {
+        _speed = speed;
+    }
+
+    private void Update()
+    {
+        // Перемещаем снаряд вперёд с заданной скоростью
+        transform.position += transform.forward * _speed * Time.deltaTime;
+    }
+
+
 }
