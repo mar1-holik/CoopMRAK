@@ -63,14 +63,15 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             // Проверяем количество игроков в комнате
-            if (runner.ActivePlayers.Count() >= maxPlayers) // Используем Count(), чтобы получить количество игроков
+            if (runner.ActivePlayers.Count() >= maxPlayers)
             {
                 Debug.LogWarning($"Player {player} tried to join, but the room is full!");
                 runner.Disconnect(player); // Отклоняем подключение
                 return;
             }
 
-            int spawnIndex = _spawnedCharacters.Count % spawnPoints.Length; // Индекс спавн-точки
+            // Выбор точки спавна
+            int spawnIndex = _spawnedCharacters.Count % spawnPoints.Length;
             Transform spawnPoint = spawnPoints[spawnIndex];
 
             // Сохраняем точку спавна для игрока
@@ -79,18 +80,24 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
                 _playerSpawnPoints[player] = spawnPoint;
             }
 
-            // Выбираем префаб для игрока
+            // Выбор префаба игрока
             int prefabIndex = _spawnedCharacters.Count % playerPrefabs.Length;
             NetworkPrefabRef selectedPrefab = playerPrefabs[prefabIndex];
 
-            // Спавним игрока
-            NetworkObject networkPlayerObject = runner.Spawn(selectedPrefab, spawnPoint.position, spawnPoint.rotation, player);
+            // Спавн объекта игрока
+            NetworkObject networkPlayerObject = runner.Spawn(
+                selectedPrefab,
+                spawnPoint.position,
+                spawnPoint.rotation,
+                player
+            );
 
-            // Сохраняем объект игрока
+            // Добавляем игрока в словарь
             _spawnedCharacters.Add(player, networkPlayerObject);
+
+            Debug.Log($"Игрок {player.PlayerId} заспавнен. Точка спавна: {spawnPoint.position}");
         }
     }
-
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
@@ -105,6 +112,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             _playerSpawnPoints.Remove(player);
         }
+
+        Debug.Log($"Игрок {player.PlayerId} покинул игру.");
     }
 
     public Transform GetSpawnPointForPlayer(PlayerRef player)
@@ -113,9 +122,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             return spawnPoint;
         }
-
-        Debug.LogError($"Spawn point for player {player} not found! Using default position.");
-        return null; // Возвращаем null, если игрока нет в словаре
+        return null;
     }
 
     private void FixedUpdate()

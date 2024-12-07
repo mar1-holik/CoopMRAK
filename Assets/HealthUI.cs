@@ -4,22 +4,20 @@ using UnityEngine.UI;
 public class HealthUI : MonoBehaviour
 {
     [SerializeField] private Image[] hearts; // Массив иконок сердец
-    private int currentHealth;
 
-    private void Start()
+    public void InitializeHealth(int maxHealth)
     {
-        currentHealth = hearts.Length; // Устанавливаем текущее здоровье равным количеству сердец
+        for (int i = 0; i < hearts.Length; i++)
+        {
+            hearts[i].enabled = i < maxHealth;
+        }
     }
 
-    // Метод для уменьшения здоровья
-    public void DecreaseHealth()
+    public void UpdateHealth(int currentHealth)
     {
-        if (currentHealth > 0)
+        for (int i = 0; i < hearts.Length; i++)
         {
-            currentHealth--; // Уменьшаем текущее здоровье
-
-            // Скрываем текущее сердце
-            hearts[currentHealth].enabled = false;
+            hearts[i].enabled = i < currentHealth;
         }
     }
 }
