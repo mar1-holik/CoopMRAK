@@ -32,9 +32,39 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             Scene = scene,
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
-
-
     }
+
+    public async void StartGame()
+{
+    var result = await _runner.StartGame(new StartGameArgs
+    {
+        GameMode = GameMode.Host,
+        SessionName = "TestRoom",
+        SceneManager = _runner.GetComponent<NetworkSceneManagerDefault>()
+    });
+
+    if (result.Ok)
+    {
+        Debug.Log("Игра успешно запущена!");
+
+        // Связываем WinManager с NetworkRunner
+        var winManager = FindObjectOfType<WinManager>();
+        if (winManager != null)
+        {
+            winManager.SetRunner(_runner);
+            Debug.Log("WinManager успешно связан с NetworkRunner.");
+        }
+        else
+        {
+            Debug.LogError("WinManager не найден в сцене!");
+        }
+    }
+    else
+    {
+        Debug.LogError($"Ошибка запуска игры: {result.ShutdownReason}");
+    }
+}
+
 
     private void Start()
     {
@@ -69,14 +99,26 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         // Например: уведомление о начале игры, спавн объектов, запуск других систем
     }
     public void StartHost()
+{
+    if (_runner == null)
     {
-        if (_runner == null)
+        StartGame(GameMode.Host);
+        CloseMenu();
+        ShowReadyMenu();
+
+        // Подключаем NetworkRunner к WinManager
+        var winManager = FindObjectOfType<WinManager>();
+        if (winManager != null)
         {
-            StartGame(GameMode.Host);
-            CloseMenu();
-            ShowReadyMenu();
+            winManager.SetRunner(_runner); // Передаём созданный NetworkRunner
+        }
+        else
+        {
+            Debug.LogError("WinManager не найден!");
         }
     }
+}
+
 
     public void StartClient()
     {
