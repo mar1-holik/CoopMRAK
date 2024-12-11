@@ -17,8 +17,9 @@ public class Player : NetworkBehaviour
 
     private NetworkCharacterController _cc; // Компонент для движения
     private Vector3 _forward; // Направление движения
-    private bool isRespawning = false; // Флаг респавна
+    public bool isRespawning = false; // Флаг респавна
     private bool isShooting = false; // Флаг выстрела
+    private NetworkCharacterController _controller;
 
     private void Awake()
     {
@@ -39,6 +40,12 @@ public class Player : NetworkBehaviour
         {
             Debug.LogWarning("Animator не найден! Убедитесь, что он установлен в инспекторе.");
         }
+
+        _controller = GetComponent<NetworkCharacterController>();
+        if (_controller == null)
+        {
+            Debug.LogError($"{name}: NetworkCharacterController не найден!");
+        }
     }
 
     public override void Spawned()
@@ -58,6 +65,8 @@ public class Player : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (_controller == null || !_controller.enabled) return; // Не выполняем логику движения, если управление отключено
+        
         if (GetInput(out NetworkInputData data))
         {
             data.direction.Normalize();
@@ -117,32 +126,47 @@ public class Player : NetworkBehaviour
         }
     }
 
-    public void HandleDeathZone()
+public void HandleDeathZone()
+{
+    if (Object == null) // Проверяем, был ли объект заспавнен
     {
-        if (HasStateAuthority && !isRespawning)
+        Debug.LogError("Игрок ещё не заспавнен. Невозможно обработать зону смерти.");
+        return;
+    }
+
+    if (HasStateAuthority && !isRespawning)
+    {
+        if (IsProtected())
         {
-            if (IsProtected())
-            {
-                Debug.Log("Игрок находится под защитой. Смерть не засчитана.");
-                return;
-            }
+            Debug.Log("Игрок находится под защитой. Смерть не засчитана.");
+            return;
+        }
 
-            if (CurrentLives > 0)
-            {
-                CurrentLives--; // Уменьшаем жизни
-                RPC_UpdateHealthUI(CurrentLives); // Обновляем UI для всех
-            }
+        if (CurrentLives > 0)
+        {
+            CurrentLives--;
+            RPC_UpdateHealthUI(CurrentLives);
+        }
 
-            if (CurrentLives > 0)
+        if (CurrentLives > 0)
+        {
+            Respawn();
+        }
+        else
+        {
+            Runner.Despawn(Object);
+            var winManager = FindObjectOfType<WinManager>();
+            if (winManager != null)
             {
-                Respawn();
+                winManager.CheckWinner();
             }
             else
             {
-                Runner.Despawn(Object); // Удаляем объект игрока, если жизни закончились
+                Debug.LogError("WinManager не найден!");
             }
         }
     }
+}
 
     public bool IsProtected()
     {
@@ -177,13 +201,32 @@ public class Player : NetworkBehaviour
             healthUI.UpdateHealth(lives); // Обновляем UI на всех клиентах
         }
     }
-    public void EnableControls()
+
+public void EnableControls()
+{
+    if (_controller != null)
     {
-        // Здесь включаем управление
-        Debug.Log($"{name} получил управление");
-        // Например, включаем передвижение через NetworkCharacterController
-        GetComponent<NetworkCharacterController>().enabled = true;
-
-
+        _controller.enabled = true;
+        Debug.Log($"{name}: управление включено.");
     }
+    else
+    {
+        Debug.LogError($"{name}: Не удалось включить управление, так как _controller не инициализирован.");
+    }
+}
+
+public void DisableControls()
+{
+    if (_controller != null)
+    {
+        _controller.enabled = false; // Отключаем движение
+        Debug.Log($"{name}: управление отключено.");
+    }
+    else
+    {
+        Debug.LogError($"{name}: Не удалось отключить управление, так как _controller не инициализирован.");
+    }
+}
+
+
 }
