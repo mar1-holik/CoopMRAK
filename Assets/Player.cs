@@ -18,6 +18,7 @@ public class Player : NetworkBehaviour
     private NetworkCharacterController _cc; // Компонент для движения
     private Vector3 _forward; // Направление движения
     private bool isRespawning = false; // Флаг респавна
+    private bool isShooting = false; // Флаг выстрела
 
     private void Awake()
     {
@@ -69,25 +70,27 @@ public class Player : NetworkBehaviour
 
             if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0) && delay.ExpiredOrNotRunning(Runner))
             {
-                if (_animator != null)
+                if (_animator != null && !isShooting)
                 {
                     _animator.SetBool("isShooting", true);
+                    isShooting = true;
                 }
 
                 delay = TickTimer.CreateFromSeconds(Runner, shootCooldown);
                 StartCoroutine(SpawnBallWithDelay());
             }
-            else
+            else if (isShooting && delay.ExpiredOrNotRunning(Runner))
             {
-                if (_animator != null && _animator.GetBool("isShooting"))
-                {
-                    _animator.SetBool("isShooting", false);
-                }
-
                 if (_animator != null)
                 {
-                    _animator.SetBool("isRunning", data.direction.sqrMagnitude > 0);
+                    _animator.SetBool("isShooting", false);
+                    isShooting = false;
                 }
+            }
+
+            if (_animator != null)
+            {
+                _animator.SetBool("isRunning", data.direction.sqrMagnitude > 0);
             }
         }
     }
@@ -105,6 +108,12 @@ public class Player : NetworkBehaviour
                 Object.InputAuthority,
                 (runner, o) => { o.GetComponent<Ball>().SetSpeed(bulletSpeed); }
             );
+        }
+
+        if (_animator != null)
+        {
+            _animator.SetBool("isShooting", false);
+            isShooting = false;
         }
     }
 

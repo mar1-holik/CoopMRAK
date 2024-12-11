@@ -818,8 +818,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _prefabBall: {fileID: 2015846284172938178, guid: ea5b8e53d15dae2439eb3de113c57e81, type: 3}
   _animator: {fileID: 905771713077286205}
-  shootDelay: 0.3
-  shootCooldown: 1
+  shootDelay: 0.5
+  shootCooldown: 1.25
   bulletSpeed: 10
   healthUI: {fileID: 3526352708619863629}
   _CurrentLives: 2
