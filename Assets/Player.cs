@@ -168,4 +168,13 @@ public class Player : NetworkBehaviour
             healthUI.UpdateHealth(lives); // Обновляем UI на всех клиентах
         }
     }
+    public void EnableControls()
+    {
+        // Здесь включаем управление
+        Debug.Log($"{name} получил управление");
+        // Например, включаем передвижение через NetworkCharacterController
+        GetComponent<NetworkCharacterController>().enabled = true;
+
+
+    }
 }
