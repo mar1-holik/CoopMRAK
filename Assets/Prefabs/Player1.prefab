@@ -824,7 +824,7 @@ MonoBehaviour:
   bulletSpeed: 10
   healthUI: {fileID: 3526352708619863629}
   _audioSource: {fileID: 6212604975189480114}
-  _shootSound: {fileID: 8300000, guid: ad0b0e91b86856e4d8f55f1ca8d5a0e6, type: 3}
+  _shootSound: {fileID: 8300000, guid: feb22994dacfac94b98629376c80b2ea, type: 3}
   _CurrentLives: 2
   isRespawning: 0
 --- !u!82 &6212604975189480114
@@ -837,9 +837,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: ad0b0e91b86856e4d8f55f1ca8d5a0e6, type: 3}
+  m_audioClip: {fileID: 8300000, guid: feb22994dacfac94b98629376c80b2ea, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.67
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -913,7 +913,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
+      value: 0.454
       inSlope: 0
       outSlope: 0
       tangentMode: 0
