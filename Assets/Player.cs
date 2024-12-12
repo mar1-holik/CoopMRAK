@@ -11,6 +11,9 @@ public class Player : NetworkBehaviour
     [SerializeField] private float bulletSpeed = 10f; // Скорость снаряда
     [SerializeField] private HealthUI healthUI; // Ссылка на HealthUI
 
+    [SerializeField] private AudioSource _audioSource; // Ссылка на AudioSource
+    [SerializeField] private AudioClip _shootSound; // Звуковой эффект выстрела
+
     [Networked] public int CurrentLives { get; private set; } = 3; // Синхронизируемое количество жизней
     [Networked] private TickTimer delay { get; set; } // Таймер между выстрелами
     [Networked] private TickTimer respawnProtectionTimer { get; set; } // Таймер защиты после респавна
@@ -25,6 +28,21 @@ public class Player : NetworkBehaviour
     {
         _cc = GetComponent<NetworkCharacterController>();
         _forward = transform.forward;
+
+        if (_audioSource == null)
+        {
+            _audioSource = GetComponent<AudioSource>(); // Ищем AudioSource на этом объекте
+        }
+
+        if (_audioSource == null)
+        {
+            Debug.LogWarning("AudioSource не найден! Убедитесь, что он установлен в инспекторе.");
+        }
+
+        if (_shootSound == null)
+        {
+            Debug.LogWarning("Звуковой эффект выстрела не установлен! Убедитесь, что он установлен в инспекторе.");
+        }
 
         if (healthUI == null)
         {
@@ -101,6 +119,12 @@ public class Player : NetworkBehaviour
     {
         // Сначала проигрывается анимация выстрела
         yield return new WaitForSeconds(shootDelay);
+
+        // Воспроизводим звук выстрела
+        if (_audioSource != null && _shootSound != null)
+        {
+            _audioSource.PlayOneShot(_shootSound); // Проигрываем звук
+        }
 
         // Затем создается пуля
         if (Object.HasInputAuthority)
