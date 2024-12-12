@@ -65,7 +65,7 @@ public class Player : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        if (_controller == null || !_controller.enabled) return; // Не выполняем логику движения, если управление отключено
+        if (_controller == null || !_controller.enabled) return;
 
         if (GetInput(out NetworkInputData data))
         {
@@ -77,49 +77,64 @@ public class Player : NetworkBehaviour
                 _forward = data.direction;
             }
 
-            if (Object.HasInputAuthority) // Проверяем права перед отправкой RPC
+            if (Object.HasInputAuthority)
             {
                 if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0) && delay.ExpiredOrNotRunning(Runner))
                 {
                     if (!isShooting)
                     {
-                        RPC_SetAnimation("isShooting", true);
                         isShooting = true;
+                        RPC_SetAnimation("isShooting", true);
+                        StartCoroutine(CompleteShooting());
                     }
-
-                    delay = TickTimer.CreateFromSeconds(Runner, shootCooldown);
-                    StartCoroutine(SpawnBallWithDelay());
                 }
-                else if (isShooting && delay.ExpiredOrNotRunning(Runner))
+
+                if (!isShooting)
                 {
-                    RPC_SetAnimation("isShooting", false);
-                    isShooting = false;
+                    RPC_SetAnimation("isRunning", data.direction.sqrMagnitude > 0);
                 }
-
-                RPC_SetAnimation("isRunning", data.direction.sqrMagnitude > 0);
             }
         }
     }
 
-    private IEnumerator SpawnBallWithDelay()
+    private IEnumerator CompleteShooting()
     {
+        // Сначала проигрывается анимация выстрела
         yield return new WaitForSeconds(shootDelay);
 
-        if (HasStateAuthority)
+        // Затем создается пуля
+        if (Object.HasInputAuthority)
+        {
+            RPC_RequestSpawnBullet(_forward, transform.position);
+        }
+
+        // Сбрасываем анимацию выстрела
+        RPC_SetAnimation("isShooting", false);
+
+        // Устанавливаем таймер перезарядки
+        delay = TickTimer.CreateFromSeconds(Runner, shootCooldown);
+
+        isShooting = false; // Сброс флага выстрела
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_RequestSpawnBullet(Vector3 direction, Vector3 spawnPosition)
+    {
+        if (delay.ExpiredOrNotRunning(Runner)) // Проверяем таймер на стороне хоста
         {
             Runner.Spawn(
                 _prefabBall,
-                transform.position + _forward,
-                Quaternion.LookRotation(_forward),
+                spawnPosition + direction,
+                Quaternion.LookRotation(direction),
                 Object.InputAuthority,
-                (runner, o) => { o.GetComponent<Ball>().SetSpeed(bulletSpeed); }
+                (runner, o) => o.GetComponent<Ball>().SetSpeed(bulletSpeed)
             );
         }
     }
 
     public void HandleDeathZone()
     {
-        if (Object == null) // Проверяем, был ли объект заспавнен
+        if (Object == null)
         {
             Debug.LogError("Игрок ещё не заспавнен. Невозможно обработать зону смерти.");
             return;
@@ -189,7 +204,7 @@ public class Player : NetworkBehaviour
     {
         if (healthUI != null)
         {
-            healthUI.UpdateHealth(lives); // Обновляем UI на всех клиентах
+            healthUI.UpdateHealth(lives);
         }
     }
 
@@ -225,7 +240,7 @@ public class Player : NetworkBehaviour
     {
         if (_controller != null)
         {
-            _controller.enabled = false; // Отключаем движение
+            _controller.enabled = false;
             Debug.Log($"{name}: управление отключено.");
         }
         else

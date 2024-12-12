@@ -14,6 +14,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private NetworkPrefabRef[] playerPrefabs; // Префабы игроков
     [SerializeField] private Transform[] spawnPoints; // Точки спавна
     [SerializeField] private int maxPlayers = 4; // Максимум игроков
+    [SerializeField] private AudioSource backgroundMusic; // Ссылка на AudioSource для фона музыки
 
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
     private Dictionary<PlayerRef, Transform> _playerSpawnPoints = new Dictionary<PlayerRef, Transform>();
@@ -71,6 +72,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         // Устанавливаем начальное состояние экранов
         if (menuPanel != null) menuPanel.SetActive(true);
         if (readyMenu != null) readyMenu.SetActive(false);
+        if (backgroundMusic != null)
+        {
+            backgroundMusic.Stop(); // Останавливаем музыку, если она была
+        }
     }
 
     private void StartGameLogic()
@@ -183,7 +188,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         HideReadyMenu(); // Скрываем экран Ready
 
         Debug.Log("Все игроки готовы. Игра начинается!");
-
+        if (backgroundMusic != null)
+        {
+            backgroundMusic.Play(); // Начинаем воспроизведение музыки
+        }
         // Спавним игроков
         SpawnAllPlayers();
 
