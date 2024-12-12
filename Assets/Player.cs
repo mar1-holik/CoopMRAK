@@ -66,7 +66,7 @@ public class Player : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (_controller == null || !_controller.enabled) return; // Не выполняем логику движения, если управление отключено
-        
+
         if (GetInput(out NetworkInputData data))
         {
             data.direction.Normalize();
@@ -77,29 +77,26 @@ public class Player : NetworkBehaviour
                 _forward = data.direction;
             }
 
-            if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0) && delay.ExpiredOrNotRunning(Runner))
+            if (Object.HasInputAuthority) // Проверяем права перед отправкой RPC
             {
-                if (_animator != null && !isShooting)
+                if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0) && delay.ExpiredOrNotRunning(Runner))
                 {
-                    _animator.SetBool("isShooting", true);
-                    isShooting = true;
-                }
+                    if (!isShooting)
+                    {
+                        RPC_SetAnimation("isShooting", true);
+                        isShooting = true;
+                    }
 
-                delay = TickTimer.CreateFromSeconds(Runner, shootCooldown);
-                StartCoroutine(SpawnBallWithDelay());
-            }
-            else if (isShooting && delay.ExpiredOrNotRunning(Runner))
-            {
-                if (_animator != null)
+                    delay = TickTimer.CreateFromSeconds(Runner, shootCooldown);
+                    StartCoroutine(SpawnBallWithDelay());
+                }
+                else if (isShooting && delay.ExpiredOrNotRunning(Runner))
                 {
-                    _animator.SetBool("isShooting", false);
+                    RPC_SetAnimation("isShooting", false);
                     isShooting = false;
                 }
-            }
 
-            if (_animator != null)
-            {
-                _animator.SetBool("isRunning", data.direction.sqrMagnitude > 0);
+                RPC_SetAnimation("isRunning", data.direction.sqrMagnitude > 0);
             }
         }
     }
@@ -118,55 +115,49 @@ public class Player : NetworkBehaviour
                 (runner, o) => { o.GetComponent<Ball>().SetSpeed(bulletSpeed); }
             );
         }
-
-        if (_animator != null)
-        {
-            _animator.SetBool("isShooting", false);
-            isShooting = false;
-        }
     }
 
-public void HandleDeathZone()
-{
-    if (Object == null) // Проверяем, был ли объект заспавнен
+    public void HandleDeathZone()
     {
-        Debug.LogError("Игрок ещё не заспавнен. Невозможно обработать зону смерти.");
-        return;
-    }
-
-    if (HasStateAuthority && !isRespawning)
-    {
-        if (IsProtected())
+        if (Object == null) // Проверяем, был ли объект заспавнен
         {
-            Debug.Log("Игрок находится под защитой. Смерть не засчитана.");
+            Debug.LogError("Игрок ещё не заспавнен. Невозможно обработать зону смерти.");
             return;
         }
 
-        if (CurrentLives > 0)
+        if (HasStateAuthority && !isRespawning)
         {
-            CurrentLives--;
-            RPC_UpdateHealthUI(CurrentLives);
-        }
-
-        if (CurrentLives > 0)
-        {
-            Respawn();
-        }
-        else
-        {
-            Runner.Despawn(Object);
-            var winManager = FindObjectOfType<WinManager>();
-            if (winManager != null)
+            if (IsProtected())
             {
-                winManager.CheckWinner();
+                Debug.Log("Игрок находится под защитой. Смерть не засчитана.");
+                return;
+            }
+
+            if (CurrentLives > 0)
+            {
+                CurrentLives--;
+                RPC_UpdateHealthUI(CurrentLives);
+            }
+
+            if (CurrentLives > 0)
+            {
+                Respawn();
             }
             else
             {
-                Debug.LogError("WinManager не найден!");
+                Runner.Despawn(Object);
+                var winManager = FindObjectOfType<WinManager>();
+                if (winManager != null)
+                {
+                    winManager.CheckWinner();
+                }
+                else
+                {
+                    Debug.LogError("WinManager не найден!");
+                }
             }
         }
     }
-}
 
     public bool IsProtected()
     {
@@ -184,7 +175,7 @@ public void HandleDeathZone()
 
         _cc.enabled = false;
         Transform spawnPoint = FindObjectOfType<BasicSpawner>().GetSpawnPointForPlayer(Object.InputAuthority);
-        _cc.Teleport(spawnPoint.position, spawnPoint.rotation);
+        RPC_Teleport(spawnPoint.position, spawnPoint.rotation);
         yield return null;
 
         _cc.enabled = true;
@@ -193,7 +184,7 @@ public void HandleDeathZone()
         isRespawning = false;
     }
 
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    [Rpc(RpcSources.All, RpcTargets.All)]
     private void RPC_UpdateHealthUI(int lives)
     {
         if (healthUI != null)
@@ -202,31 +193,44 @@ public void HandleDeathZone()
         }
     }
 
-public void EnableControls()
-{
-    if (_controller != null)
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    private void RPC_SetAnimation(string parameter, bool state)
     {
-        _controller.enabled = true;
-        Debug.Log($"{name}: управление включено.");
+        if (_animator != null)
+        {
+            _animator.SetBool(parameter, state);
+        }
     }
-    else
-    {
-        Debug.LogError($"{name}: Не удалось включить управление, так как _controller не инициализирован.");
-    }
-}
 
-public void DisableControls()
-{
-    if (_controller != null)
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    private void RPC_Teleport(Vector3 position, Quaternion rotation)
     {
-        _controller.enabled = false; // Отключаем движение
-        Debug.Log($"{name}: управление отключено.");
+        _cc.Teleport(position, rotation);
     }
-    else
+
+    public void EnableControls()
     {
-        Debug.LogError($"{name}: Не удалось отключить управление, так как _controller не инициализирован.");
+        if (_controller != null)
+        {
+            _controller.enabled = true;
+            Debug.Log($"{name}: управление включено.");
+        }
+        else
+        {
+            Debug.LogError($"{name}: Не удалось включить управление, так как _controller не инициализирован.");
+        }
     }
-}
 
-
+    public void DisableControls()
+    {
+        if (_controller != null)
+        {
+            _controller.enabled = false; // Отключаем движение
+            Debug.Log($"{name}: управление отключено.");
+        }
+        else
+        {
+            Debug.LogError($"{name}: Не удалось отключить управление, так как _controller не инициализирован.");
+        }
+    }
 }
