@@ -5,8 +5,9 @@ using Fusion;
 
 public class Ball : NetworkBehaviour
 {
-
     [Networked] private TickTimer life { get; set; }
+    private float _speed; // Add this line to define _speed
+
     public override void FixedUpdateNetwork()
     {
         if (life.Expired(Runner))
@@ -15,26 +16,12 @@ public class Ball : NetworkBehaviour
         }
         else
         {
-            transform.position += 5 * transform.forward * Runner.DeltaTime;
+            transform.position += transform.forward * _speed * Runner.DeltaTime;
         }
     }
-    public void Init()
-    {
-        life = TickTimer.CreateFromSeconds(Runner, 1.7f);
-    }
-
-    private float _speed;
 
     public void SetSpeed(float speed)
     {
         _speed = speed;
     }
-
-    private void Update()
-    {
-        // Перемещаем снаряд вперёд с заданной скоростью
-        transform.position += transform.forward * _speed * Time.deltaTime;
-    }
-
-
 }

@@ -58,5 +58,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   roomName: DefaultRoom
-  gameMode: 4
+  gameMode: 2
   maxPlayers: 2
