@@ -1,6 +1,7 @@
 ﻿using Fusion;
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 
 public class Player : NetworkBehaviour
 {
@@ -10,6 +11,10 @@ public class Player : NetworkBehaviour
     [SerializeField] private float shootCooldown = 1.3f; // Время между выстрелами
     [SerializeField] private float bulletSpeed = 10f; // Скорость снаряда
     [SerializeField] private HealthUI healthUI; // Ссылка на HealthUI
+
+    [SerializeField] private Image playerIcon; // Уникальная иконка игрока
+    [SerializeField] private Sprite[] playerIcons; // Массив иконок
+
 
     [SerializeField] private AudioSource _audioSource; // Ссылка на AudioSource
     [SerializeField] private AudioClip _shootSound; // Звуковой эффект выстрела
@@ -67,19 +72,37 @@ public class Player : NetworkBehaviour
     }
 
     public override void Spawned()
+{
+    base.Spawned();
+
+    if (HasStateAuthority)
     {
-        base.Spawned();
-
-        if (HasStateAuthority)
+        CurrentLives = 3;
+        if (healthUI != null)
         {
-            CurrentLives = 3; // Устанавливаем начальное количество жизней
-
-            if (healthUI != null)
-            {
-                healthUI.InitializeHealth(CurrentLives); // Инициализация UI здоровья
-            }
+            healthUI.InitializeHealth(CurrentLives);
         }
     }
+
+    // Установка иконки только для текущего игрока
+    if (Object.HasInputAuthority)
+    {
+        if (playerIcon != null && playerIcons.Length > 0)
+        {
+            int iconIndex = Object.InputAuthority.PlayerId % playerIcons.Length;
+            playerIcon.sprite = playerIcons[iconIndex];
+        }
+    }
+    else
+    {
+        // Отключаем картинку для других игроков
+        if (playerIcon != null)
+        {
+            playerIcon.enabled = false; // Скрываем иконку для всех, кроме владельца
+        }
+    }
+}
+
 
     public override void FixedUpdateNetwork()
     {
