@@ -6,7 +6,17 @@ using Fusion;
 public class Ball : NetworkBehaviour
 {
     [Networked] private TickTimer life { get; set; }
-    private float _speed; // Add this line to define _speed
+    private float _speed;
+    [SerializeField] private float knockbackForce = 10f; // Сила отталкивания
+
+    public override void Spawned()
+    {
+        // Устанавливаем таймер жизни пули
+        if (Object.HasStateAuthority)
+        {
+            life = TickTimer.CreateFromSeconds(Runner, 5f); // Пуля исчезнет через 5 секунд
+        }
+    }
 
     public override void FixedUpdateNetwork()
     {
@@ -23,5 +33,26 @@ public class Ball : NetworkBehaviour
     public void SetSpeed(float speed)
     {
         _speed = speed;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.TryGetComponent<Player>(out Player player))
+        {
+            // Применяем силу отталкивания к игроку
+            Vector3 direction = collision.transform.position - transform.position;
+            direction.Normalize();
+
+            if (player.TryGetComponent<Rigidbody>(out Rigidbody playerRigidbody))
+            {
+                playerRigidbody.AddForce(direction * knockbackForce, ForceMode.Impulse);
+            }
+        }
+
+        // Удаляем пулю после столкновения
+        if (Object.HasStateAuthority)
+        {
+            Runner.Despawn(Object);
+        }
     }
 }

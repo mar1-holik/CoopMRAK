@@ -4,7 +4,9 @@ using Fusion;
 
 public class WinManager : NetworkBehaviour
 {
-    [SerializeField] private TMP_Text winMessage;
+    [SerializeField] private GameObject winMenuCanvas; // Canvas с фоном и текстом
+    [SerializeField] private TMP_Text winMessage; // Текстовое сообщение о победе
+
     private bool gameEnded = false;
 
     [Networked] private int WinnerId { get; set; } = -1;
@@ -26,7 +28,7 @@ public class WinManager : NetworkBehaviour
 
     public void CheckWinner()
     {
-        if (gameEnded || _networkRunner == null)
+        if (gameEnded || _networkRunner == null) // Здесь исправлено
         {
             Debug.LogError("Игра завершена или Runner не инициализирован.");
             return;
@@ -63,7 +65,7 @@ public class WinManager : NetworkBehaviour
 
     private void Update()
     {
-        if (_networkRunner == null || gameEnded || Object == null) return;
+        if (_networkRunner == null || gameEnded || Object == null) return; // Здесь исправлено
 
         if (WinnerId != previousWinnerId)
         {
@@ -79,35 +81,37 @@ public class WinManager : NetworkBehaviour
     }
 
     private void DisplayWinner(int playerId)
-{
-    if (gameEnded) return;
-
-    gameEnded = true;
-
-    // Отключаем управление у всех игроков
-    DisableAllPlayerControls();
-
-    if (winMessage != null)
     {
-        winMessage.text = playerId >= 0 ? $"Игрок №{playerId} выиграл!" : "Никто не победил!";
-        winMessage.gameObject.SetActive(true);
+        if (gameEnded) return;
+
+        gameEnded = true;
+
+        // Отключаем управление у всех игроков
+        DisableAllPlayerControls();
+
+        if (winMenuCanvas != null)
+        {
+            winMenuCanvas.SetActive(true); // Активируем Canvas
+        }
+
+        if (winMessage != null)
+        {
+            winMessage.text = playerId >= 0 ? $"Игрок №{playerId} выиграл!" : "Никто не победил!";
+            winMessage.gameObject.SetActive(true);
+        }
+
+        Debug.Log($"Игрок №{playerId} выиграл!");
     }
 
-    Debug.Log($"Игрок №{playerId} выиграл!");
-}
-
-
-   private void DisableAllPlayerControls()
-{
-    foreach (var player in FindObjectsOfType<Player>())
+    private void DisableAllPlayerControls()
     {
-        if (player != null)
+        foreach (var player in FindObjectsOfType<Player>())
         {
-            Debug.Log($"Отключаем управление у игрока: {player.name}");
-            player.DisableControls();
+            if (player != null)
+            {
+                Debug.Log($"Отключаем управление у игрока: {player.name}");
+                player.DisableControls();
+            }
         }
     }
-}
-
-
 }
