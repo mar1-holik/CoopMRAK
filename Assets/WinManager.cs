@@ -6,6 +6,7 @@ public class WinManager : NetworkBehaviour
 {
     [SerializeField] private GameObject winMenuCanvas; // Canvas с фоном и текстом
     [SerializeField] private TMP_Text winMessage; // Текстовое сообщение о победе
+    [SerializeField] private AudioSource winSound; // Источник звука победы
 
     private bool gameEnded = false;
 
@@ -28,7 +29,7 @@ public class WinManager : NetworkBehaviour
 
     public void CheckWinner()
     {
-        if (gameEnded || _networkRunner == null) // Здесь исправлено
+        if (gameEnded || _networkRunner == null)
         {
             Debug.LogError("Игра завершена или Runner не инициализирован.");
             return;
@@ -65,7 +66,7 @@ public class WinManager : NetworkBehaviour
 
     private void Update()
     {
-        if (_networkRunner == null || gameEnded || Object == null) return; // Здесь исправлено
+        if (_networkRunner == null || gameEnded || Object == null) return;
 
         if (WinnerId != previousWinnerId)
         {
@@ -98,6 +99,16 @@ public class WinManager : NetworkBehaviour
         {
             winMessage.text = playerId >= 0 ? $"Игрок №{playerId} выиграл!" : "Никто не победил!";
             winMessage.gameObject.SetActive(true);
+        }
+
+        // **Добавляем воспроизведение звука победы**
+        if (winSound != null)
+        {
+            winSound.Play();
+        }
+        else
+        {
+            Debug.LogWarning("winSound не назначен в инспекторе!");
         }
 
         Debug.Log($"Игрок №{playerId} выиграл!");
