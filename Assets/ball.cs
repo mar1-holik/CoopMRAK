@@ -7,14 +7,14 @@ public class Ball : NetworkBehaviour
 {
     [Networked] private TickTimer life { get; set; }
     private float _speed;
-    [SerializeField] private float knockbackForce = 10f; // Сила отталкивания
+    [SerializeField] private float knockbackForce = 20f; // Сила отталкивания
 
     public override void Spawned()
     {
         // Устанавливаем таймер жизни пули
         if (Object.HasStateAuthority)
         {
-            life = TickTimer.CreateFromSeconds(Runner, 5f); // Пуля исчезнет через 5 секунд
+            life = TickTimer.CreateFromSeconds(Runner, 2f); // Пуля исчезнет через 5 секунд
         }
     }
 

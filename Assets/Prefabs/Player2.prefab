@@ -254,14 +254,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.48963326, g: 0.90804076, b: 0.9169811, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: fe6e990bbc597f74ba2417daee77a1a0, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -747,13 +747,13 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 1
-  m_Radius: 0.46
+  m_Height: 3
+  m_Radius: 0.8
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!114 &3736184357409602437
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -770,7 +770,7 @@ MonoBehaviour:
   jumpImpulse: 0
   acceleration: 10
   braking: 10
-  maxSpeed: 2
+  maxSpeed: 2.5
   rotationSpeed: 15
 --- !u!114 &-1162907985718194934
 MonoBehaviour:
@@ -786,13 +786,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _prefabBall: {fileID: 2015846284172938178, guid: ea5b8e53d15dae2439eb3de113c57e81, type: 3}
   _animator: {fileID: 8645857774936571487}
-  shootDelay: 0.5
-  shootCooldown: 1.25
-  bulletSpeed: 10
+  shootDelay: 0.3
+  shootCooldown: 0.8
+  bulletSpeed: 16
   healthUI: {fileID: 529636904632429181}
   playerIcon: {fileID: 891127083261131440}
   playerIcons:
-  - {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 21300000, guid: fe6e990bbc597f74ba2417daee77a1a0, type: 3}
   _audioSource: {fileID: -3566108280282193419}
   _shootSound: {fileID: 8300000, guid: 283e622cf12c9194ea8afb9b6632c28b, type: 3}
   _CurrentLives: 2
@@ -1051,6 +1051,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 3278383255797432478}
     m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 81c61d7e9c240f143978088025928a7f, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 81c61d7e9c240f143978088025928a7f, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 81c61d7e9c240f143978088025928a7f, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 81c61d7e9c240f143978088025928a7f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
