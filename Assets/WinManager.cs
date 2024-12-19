@@ -97,7 +97,7 @@ public class WinManager : NetworkBehaviour
 
         if (winMessage != null)
         {
-            winMessage.text = playerId >= 0 ? $"Игрок №{playerId} выиграл!" : "Никто не победил!";
+            winMessage.text = playerId >= 0 ? $"Player №{playerId} win!" : "Никто не победил!";
             winMessage.gameObject.SetActive(true);
         }
 
