@@ -51,7 +51,7 @@ public class ReadyManager : MonoBehaviour
         string status = "";
         foreach (var player in playerReadyStatus)
         {
-            status += $"Player {player.Key.PlayerId}: {(player.Value ? "Yes" : "No")}\n";
+            status += $"Player {player.Key.PlayerId}: {(player.Value ? "Unready" : "Ready")}\n";
         }
         statusText.text = status;
     }
