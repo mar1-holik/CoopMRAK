@@ -7,7 +7,7 @@ public class Ball : NetworkBehaviour
 {
     [Networked] private TickTimer life { get; set; }
     private float _speed;
-    [SerializeField] private float knockbackForce = 20f; // Сила отталкивания
+    [SerializeField] private float knockbackForce = 50f; // Сила отталкивания
 
     public override void Spawned()
     {
